@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calendrier de l'Avent - Pocket CSE (Auto)</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@400;700&family=Poppins:wght@400;500;600;700&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      min-height: 100vh; color: #fff; padding: 20px;
+    }
+    .container { max-width: 960px; margin: 0 auto; }
+    header { text-align: center; margin-bottom: 18px; }
+    h1 {
+      font-family: 'Mountains of Christmas', cursive;
+      font-size: 2.5rem; color: #ff6b6b;
+      text-shadow: 2px 2px 8px rgba(0,0,0,0.5); margin-bottom: 6px;
+    }
+    .subtitle { font-size: 1rem; opacity: 0.9; margin-bottom: 10px; }
+
+    .status {
+      background: rgba(255,255,255,0.12);
+      border-radius: 12px;
+      padding: 10px 18px;
+      display: inline-block;
+      font-size: 0.95rem;
+      margin-bottom: 18px;
+    }
+    .status strong { color: #ffd700; }
+
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 11px;
+      margin-bottom: 18px;
+    }
+    @media (max-width: 650px) {
+      .calendar { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+      h1 { font-size: 1.8rem; }
+    }
+
+    .door {
+      aspect-ratio: 1;
+      background: linear-gradient(145deg, #c41e3a, #8b0000);
+      border-radius: 12px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      font-size: 1.45rem; font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 5px 14px rgba(0,0,0,0.4);
+      transition: all 0.25s ease;
+      border: 3px solid #ffd700;
+      padding: 5px;
+      position: relative;
+    }
+    .door:hover:not(.opened):not(.disabled) {
+      transform: scale(1.06);
+      box-shadow: 0 8px 22px rgba(255, 215, 0, 0.4);
+    }
+    .door.opened {
+      background: linear-gradient(145deg, #2e7d32, #1b5e20);
+      cursor: default;
+      border-color: #81c784;
+    }
+    .door.disabled {
+      opacity: 0.38;
+      cursor: not-allowed;
+      filter: grayscale(0.5);
+    }
+    .door.today {
+      box-shadow: 0 0 0 3px #ffd700, 0 0 18px rgba(255,215,0,0.55);
+    }
+    .door-number { font-size: 1.5rem; }
+    .door .small {
+      font-size: 0.57rem; font-weight: 500;
+      margin-top: 2px; text-align: center; line-height: 1.2;
+      padding: 0 2px;
+    }
+    .door .small strong {
+      font-size: 0.54rem;
+      color: #ffd700;
+    }
+    .door .badge {
+      position: absolute;
+      top: 4px; right: 4px;
+      background: #ffd700;
+      color: #1a1a1a;
+      font-size: 0.55rem;
+      font-weight: 700;
+      padding: 2px 5px;
+      border-radius: 6px;
+    }
+
+    .modal {
+      display: none; position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.8);
+      z-index: 100; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .modal.active { display: flex; }
+    .modal-content {
+      background: linear-gradient(145deg, #1a3a4a, #0d1f2d);
+      border-radius: 20px; padding: 28px 24px;
+      max-width: 440px; width: 100%;
+      text-align: center;
+      border: 3px solid #ffd700;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+      animation: popIn 0.3s ease;
+    }
+    @keyframes popIn {
+      from { transform: scale(0.7); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .modal-content h2 {
+      font-family: 'Mountains of Christmas', cursive;
+      font-size: 1.85rem; margin-bottom: 12px; color: #ffd700;
+    }
+    .winner-name {
+      font-size: 1.3rem; font-weight: 700;
+      margin: 10px 0 6px; color: #fff;
+    }
+    .prize {
+      font-size: 1.1rem; font-weight: 600;
+      margin: 10px 0 16px; color: #ffd700;
+      background: rgba(255,215,0,0.12);
+      padding: 11px; border-radius: 10px;
+    }
+    .btn {
+      background: linear-gradient(145deg, #c41e3a, #8b0000);
+      color: white; border: none;
+      padding: 11px 26px; border-radius: 30px;
+      font-size: 1rem; font-weight: 600;
+      cursor: pointer;
+    }
+
+    .legend {
+      text-align: center; margin-top: 12px;
+      font-size: 0.85rem; opacity: 0.85;
+    }
+    .legend span { margin: 0 10px; }
+    .dot {
+      display: inline-block; width: 12px; height: 12px;
+      border-radius: 3px; margin-right: 5px; vertical-align: middle;
+    }
+    .dot.closed { background: #c41e3a; border: 1px solid #ffd700; }
+    .dot.opened { background: #2e7d32; }
+    .dot.today { background: #ffd700; }
+
+    .fast-controls {
+      text-align: center;
+      margin-top: 18px;
+      font-size: 0.85rem;
+      opacity: 0.7;
+    }
+    .fast-controls button {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: 20px;
+      margin: 0 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .fast-controls button:hover {
+      background: rgba(255,215,0,0.25);
+    }
+
+    footer {
+      text-align: center; margin-top: 22px;
+      font-size: 0.8rem; opacity: 0.55;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🎄 Calendrier de l'Avent</h1>
+      <p class="subtitle">Pocket CSE – Mode test automatique</p>
+      <div class="status">
+        Aujourd'hui nous sommes le <strong id="currentDayLabel">1 décembre</strong>
+      </div>
+    </header>
+
+    <div class="calendar" id="calendar"></div>
+
+    <div class="legend">
+      <span><i class="dot closed"></i> Fermée</span>
+      <span><i class="dot today"></i> Jour J</span>
+      <span><i class="dot opened"></i> Ouverte</span>
+    </div>
+
+    <div class="fast-controls">
+      <span>Avance rapide (test) :</span>
+      <button onclick="advanceDay(1)">+1 jour</button>
+      <button onclick="advanceDay(5)">+5 jours</button>
+      <button onclick="resetAll()">Réinitialiser</button>
+    </div>
+
+    <footer>
+      Le jour avance automatiquement chaque jour réel<br>
+      Ou utilisez les boutons ci-dessus pour tester rapidement
+    </footer>
+  </div>
+
+  <div class="modal" id="modal">
+    <div class="modal-content">
+      <h2>🎉 Félicitations !</h2>
+      <div class="winner-name" id="modalWinner"></div>
+      <div class="prize" id="modalPrize"></div>
+      <p style="opacity:0.9; margin-bottom:16px; font-size:0.95rem;">
+        Ce salarié a été tiré au sort et gagne ce beau cadeau. Bravo !
+      </p>
+      <button class="btn" onclick="closeModal()">Fermer</button>
+    </div>
+  </div>
+
+  <script>
+    const winners = {
+      1:  { prenom: "JULIEN",     nom: "MORANDEAU",      cadeau: "Carton de 6 bouteilles de vin blanc" },
+      2:  { prenom: "GHISLAINE",  nom: "DANNEQUIN",      cadeau: "Crème corps" },
+      3:  { prenom: "TRISTAN",    nom: "BELOT",          cadeau: "Yaourtière" },
+      4:  { prenom: "JULIEN",     nom: "CHASSARD",       cadeau: "Bon d'achat 100 €" },
+      5:  { prenom: "Martin",     nom: "THIRIET",        cadeau: "Parfum Azzaro Homme" },
+      6:  { prenom: "Théo",       nom: "MONCHABLON",     cadeau: "Carton de 6 bouteilles de vin rouge" },
+      7:  { prenom: "PASCAL",     nom: "SINNER",         cadeau: "Dîner pour 2 au restaurant" },
+      8:  { prenom: "ERIC",       nom: "AUBERTIN",       cadeau: "Coffret outils" },
+      9:  { prenom: "LUIS",       nom: "GARCIA",         cadeau: "Machine à café" },
+      10: { prenom: "DIDIER",     nom: "LAMBOTTE",       cadeau: "Carte de pêche adulte 2027" },
+      11: { prenom: "MANON",      nom: "PIERRAT",        cadeau: "Bon d'achat 20 €" },
+      12: { prenom: "CEDRIC",     nom: "MARTIN",         cadeau: "Kit huiles essentielles" },
+      13: { prenom: "FABIEN",     nom: "DELACROIX",      cadeau: "Ensemble de couteaux" },
+      14: { prenom: "JIMMY",      nom: "MAOKHAMPHIOU",   cadeau: "Batterie de poêles" },
+      15: { prenom: "Jérome",     nom: "GRILLI",         cadeau: "Aspirateur" },
+      16: { prenom: "JONATHAN",   nom: "DOFFAGNE",       cadeau: "Bon d'achat 50 €" },
+      17: { prenom: "CHRISTOPHE", nom: "LAUNOIS",        cadeau: "Montre" },
+      18: { prenom: "LAUREN",     nom: "CAUSERET",       cadeau: "Kit de massage" },
+      19: { prenom: "YANNICK",    nom: "FERCIOT",        cadeau: "Trousse de toilette" },
+      20: { prenom: "Geoffrey",   nom: "GREBERT",        cadeau: "Parfum Ange ou Démon" },
+      21: { prenom: "JEREMIE",    nom: "COURTOIS",       cadeau: "Bon d'achat 60 €" },
+      22: { prenom: "SEBASTIEN",  nom: "MASSON",         cadeau: "Coffret thé" },
+      23: { prenom: "JEAN",       nom: "MASY",           cadeau: "Bouteille de champagne" },
+      24: { prenom: "VICTOR",     nom: "HUSSON",         cadeau: "Robot ménager" },
+      25: { prenom: "MICKAEL",    nom: "DUMOULIN",       cadeau: "Sculpture" }
+    };
+
+    // === Gestion automatique du jour ===
+    // On stocke la date de démarrage du test (premier chargement)
+    let startTimestamp = localStorage.getItem('avent_start_ts');
+    if (!startTimestamp) {
+      startTimestamp = Date.now();
+      localStorage.setItem('avent_start_ts', startTimestamp);
+    }
+    startTimestamp = parseInt(startTimestamp, 10);
+
+    // Jour actuel = 1 + nombre de jours réels écoulés depuis le démarrage
+    function getCurrentDay() {
+      const now = Date.now();
+      const daysElapsed = Math.floor((now - startTimestamp) / (1000 * 60 * 60 * 24));
+      let day = 1 + daysElapsed;
+      if (day > 25) day = 25;
+      return day;
+    }
+
+    // Pour les tests rapides : on peut forcer un offset
+    let forceOffset = parseInt(localStorage.getItem('avent_force_offset') || '0', 10);
+
+    function getEffectiveDay() {
+      let day = getCurrentDay() + forceOffset;
+      if (day < 1) day = 1;
+      if (day > 25) day = 25;
+      return day;
+    }
+
+    let opened = JSON.parse(localStorage.getItem('avent_auto_opened') || '{}');
+
+    function updateLabel() {
+      const day = getEffectiveDay();
+      document.getElementById('currentDayLabel').textContent = day + ' décembre';
+    }
+
+    function createCalendar() {
+      const calendar = document.getElementById('calendar');
+      calendar.innerHTML = '';
+      const currentDay = getEffectiveDay();
+      updateLabel();
+
+      for (let day = 1; day <= 25; day++) {
+        const door = document.createElement('div');
+        door.className = 'door';
+        const w = winners[day];
+        const isOpened = opened[day];
+        const isToday = day === currentDay;
+
+        if (isOpened) {
+          door.classList.add('opened');
+          door.innerHTML = `
+            <span class="door-number">${day}</span>
+            <span class="small">${w.prenom} ${w.nom}<br><strong>${w.cadeau}</strong></span>
+          `;
+        } else if (isToday) {
+          door.classList.add('today');
+          door.innerHTML = `
+            <span class="badge">JOUR J</span>
+            <span class="door-number">${day}</span>
+          `;
+          door.addEventListener('click', () => openDoor(day));
+        } else {
+          door.classList.add('disabled');
+          door.innerHTML = `<span class="door-number">${day}</span>`;
+        }
+        calendar.appendChild(door);
+      }
+    }
+
+    function openDoor(day) {
+      if (day !== getEffectiveDay()) return;
+      opened[day] = true;
+      localStorage.setItem('avent_auto_opened', JSON.stringify(opened));
+
+      const w = winners[day];
+      document.getElementById('modalWinner').textContent = w.prenom + ' ' + w.nom;
+      document.getElementById('modalPrize').textContent = w.cadeau;
+      document.getElementById('modal').classList.add('active');
+      createCalendar();
+    }
+
+    function closeModal() {
+      document.getElementById('modal').classList.remove('active');
+    }
+
+    function advanceDay(n) {
+      forceOffset += n;
+      if (getEffectiveDay() > 25) forceOffset = 25 - getCurrentDay();
+      localStorage.setItem('avent_force_offset', forceOffset);
+      createCalendar();
+    }
+
+    function resetAll() {
+      if (confirm('Tout réinitialiser et recommencer au 1er décembre ?')) {
+        localStorage.removeItem('avent_auto_opened');
+        localStorage.removeItem('avent_start_ts');
+        localStorage.removeItem('avent_force_offset');
+        opened = {};
+        forceOffset = 0;
+        startTimestamp = Date.now();
+        localStorage.setItem('avent_start_ts', startTimestamp);
+        createCalendar();
+      }
+    }
+
+    // Rafraîchir automatiquement toutes les minutes (au cas où le jour change)
+    setInterval(createCalendar, 60000);
+
+    createCalendar();
+  </script>
+</body>
+</html>
